@@ -1,0 +1,7 @@
+.meetings-table tbody tr button{
+    display: none;
+}
+
+.meetings-table tbody tr:hover button{
+    display: block;
+}

@@ -1,0 +1,19 @@
+.plus-button {
+    display: flex;
+    align-items: center;
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    margin: 2rem;
+    padding: 1rem;
+    border-radius: 50%;
+    border-color: transparent;
+    background-color: var(--purple-dark);
+    box-shadow: 4px 4px 10px 1px #00000025;
+    transition: scale 0.25s;
+    cursor: pointer;
+}
+
+.plus-button img {
+    width: 20px;
+}
