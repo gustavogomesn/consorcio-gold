@@ -1,15 +1,17 @@
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from .models import Members, Loans, Meetings, TemporaryEntries
 from .forms import UploadFileForm
 from django.views.decorators.csrf import csrf_exempt
-import openpyxl
-import openpyxl.workbook
 from datetime import date
 from dateutil.relativedelta import relativedelta
+import openpyxl
+import json
+import io
 
 LOAN_FEE = 3/100
 MULT_ALLOWED_LOAN = 3
 STOCK_VALUE = 50
+FUND_VALUE = 5
 
 def index(request):
     print('Server running')
@@ -23,10 +25,18 @@ def get_meetings(request):
 def new_meeting(request):
     if request.method == "POST":
         data = dict(request.POST.items())
-        print(data)
         meeting = Meetings(date = data['meeting-date'])
         meeting.save()
-        return JsonResponse({'status': 'meeting registered'})
+        return JsonResponse({'status': 'Meeting registered'})
+    return JsonResponse({'status': 'Method not allowed'})
+
+@csrf_exempt
+def delete_meeting(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        meeting = Meetings.objects.filter(id=data['id'])
+        meeting.delete()
+        return JsonResponse({'status': 'Meeting deleted'})
     return JsonResponse({'status': 'Method not allowed'})
 
 def get_members(request):
@@ -123,3 +133,68 @@ def loan_payment_temporarily(request):
         loan.save()
         return JsonResponse({'status': 'Loan Deleted'})
     return JsonResponse({'status': 'Method not allowed'})
+
+def contrib_model_download(request):
+    wb = openpyxl.Workbook()
+    ws = wb.active
+
+    ws.append(["numero", "nome", "acoes"])
+    members = list(Members.objects.order_by('number').values())
+    for member in members:
+        ws.append([member['number'], member['name'], ''])
+
+    # Save the workbook to an in-memory buffer
+    excel_file = io.BytesIO()
+    wb.save(excel_file)
+    excel_file.seek(0)
+
+    response = HttpResponse(excel_file, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename="aportes.xlsx"'
+
+    return response
+
+@csrf_exempt  
+def new_contribs(request):
+    if request.method == "POST":
+        data = dict(request.POST.items())
+        print(data)
+        # loan = Loans.objects.filter(id = data['loan-id'])
+        # loan.remaining_value = loan.value - data.payment
+        # loan.fee_by_month = loan.remaining_value * LOAN_FEE
+        # loan.save()
+        return JsonResponse({'status': 'Loan Deleted'})
+    return JsonResponse({'status': 'Method not allowed'})
+
+def handle_upload_contribs(file, meeting_id):
+    try:
+        wkb = openpyxl.load_workbook(file)
+        sheet = wkb.active
+        columns = sheet.max_column
+        rows = sheet.max_row
+        for r in range(1, rows):
+            keys = ['number', 'name', 'value']
+            contrib = {
+                'number': 0,
+                'name': '',
+                'value': 0
+            }
+            for c in range(1, columns):
+                contrib[keys[c-1]] = sheet.cell(r+1, c).value
+            print(contrib)
+            # contrib['type'] = 'stocks'
+            # contrib['meeting_id'] = meeting_id
+            # contrib['member_id'] = list(Members.objects.filter(number=contrib['number']).values())[0].id
+            # del contrib['number'], contrib['name']
+            # m = TemporaryEntries(**contrib)
+            # m.save()
+    except:
+        return JsonResponse({'status': 'This file isnt a spreadsheet'})
+    
+@csrf_exempt
+def upload_contribs(request):
+    if request.method == "POST":
+        data = dict(request.POST.items())
+        handle_upload_contribs(request.FILES["file"], data['meeting_id'])
+        return JsonResponse({'status': 'File uploaded'})
+    else:
+        return JsonResponse({'status': 'Method isnt POST'})

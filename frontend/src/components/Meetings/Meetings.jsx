@@ -20,6 +20,30 @@ export default function Meetings() {
         return json
     }
 
+    async function handleDeleteMeeting(e) {    
+        const meetingId = e.target.getAttribute('data-meeting-id');
+        try {
+            const response = await fetch("http://localhost:8000/delete-meeting/", {
+                method: "POST",
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ id: meetingId }),
+            });
+    
+            if (response.ok) {
+                // Update the state to remove the deleted meeting
+                setMeetings((prevMeetings) => prevMeetings.filter((meeting) => meeting.id !== parseInt(meetingId)));
+            } else {
+                console.error("Failed to delete meeting");
+            }
+        } catch (error) {
+            console.error("Error deleting meeting:", error);
+        }
+    }
+    
+
     return <>
         <Menu />
         <main>
@@ -41,18 +65,17 @@ export default function Meetings() {
                     <tr key={meeting.id}>
                         <th scope="row">{meeting.date}</th>
                         <td>{meeting.stocks}</td>
-                        <td>{meeting.loans}</td>
+                        <td>{meeting.loans_made}</td>
                         <td>{meeting.fees}</td>
                         <td>{meeting.fine}</td>
                         <td>{meeting.finished ? 'Encerrada' : 'Em andamento'}</td>
                         <td>
                             <div className='d-flex'>
-                                {meeting.finished ? <>
-                                    </>
+                                {meeting.finished ? <></>
                                     : 
                                     <>
                                     <button data-meeting-id={meeting.id}>Editar</button>
-                                    <button data-meeting-id={meeting.id}>Apagar</button>
+                                    <button data-meeting-id={meeting.id} onClick={handleDeleteMeeting} >Excluir</button>
                                     <button data-meeting-id={meeting.id}>Encerrar</button>
                                     </>
                                     }
@@ -63,6 +86,6 @@ export default function Meetings() {
             </tbody>
             </table>
         </main>
-        <AddButton/>
+        <AddButton meetings={meetings} setMeetings={setMeetings}/>
     </>
 }

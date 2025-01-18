@@ -3,8 +3,9 @@ import './AddButton.css'
 import NewLoan from '../NewLoan/NewLoan'
 import LoanPayment from '../LoanPayment/LoanPayment'
 import NewMeeting from '../NewMeeting/NewMetting'
+import NewContrib from '../NewContrib/NewContrib'
 
-export default function AddButton({members}) {
+export default function AddButton() {
 	return <div className='dropdown d-flex d-row justify-content-center'>
 		<div className='plus-button'>
 			<a href="#" className="d-flex align-items-center text-white text-decoration-none" data-bs-toggle="dropdown">
@@ -17,7 +18,7 @@ export default function AddButton({members}) {
 					</a>
 				</li>
 				<li>
-					<NewMeeting />
+					<NewMeeting/>
 				</li>
 				<li>
 					<NewLoan/>
@@ -26,9 +27,7 @@ export default function AddButton({members}) {
 					<LoanPayment />
 				</li>
 				<li>
-					<a className="dropdown-item" href="#">
-						Novo aporte
-					</a>
+					<NewContrib />
 				</li>
 			</ul>
 		</div>

@@ -80,7 +80,7 @@ function LoanPayment() {
                             <select className='form-control' id='borrower-input' name='loan_id' onChange={handleChangeOfBorrower}>
                                 <option selected disabled>Selecionar tomador</option>
                                 {loans.map((loan) => (
-                                    <option value={loan.id} data-loan-value={loan.value}>{loan.borrower}</option>
+                                    <option key={loan.id} value={loan.id} data-loan-value={loan.value}>{loan.borrower}</option>
                                 ))}
                             </select>
                         </div>
@@ -88,7 +88,7 @@ function LoanPayment() {
                             <label htmlFor="meeting-input">Reunião</label>
                             <select className='form-control' id='meeting-input' name='meeting_id' required>
                                 {meetings.map((meeting) => (
-                                    !meeting.finished && <option value={meeting.id}>{meeting.date}</option>
+                                    !meeting.finished && <option key={meeting.id} value={meeting.id}>{meeting.date}</option>
                                 ))}
                             </select>
                         </div>

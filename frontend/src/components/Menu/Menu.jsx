@@ -23,11 +23,6 @@ export default function Menu() {
 				</a>
 			</li>
 			<li className='nav-item hover-purple rounded'>
-				<a className="nav-link" aria-current="page">
-					Gráficos
-				</a>
-			</li>
-			<li className='nav-item hover-purple rounded'>
 				<a href="/membros" className="nav-link" aria-current="page">
 					Membros
 				</a>

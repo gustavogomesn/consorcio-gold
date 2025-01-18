@@ -30,7 +30,7 @@ class Loans(models.Model):
 class TemporaryEntries(models.Model):
     meeting = models.ForeignKey(Meetings, on_delete=models.CASCADE)
     member = models.ForeignKey(Members, on_delete=models.CASCADE)
-    loan = models.ForeignKey(Loans, on_delete=models.CASCADE)
+    loan = models.ForeignKey(Loans, on_delete=models.CASCADE, null=True, blank=True)
     type = models.CharField(max_length=50)
     value = models.FloatField()
 
