@@ -14,7 +14,7 @@ function NewContrib() {
 	}, [])
 
     async function getMeetings() {
-		const endpoint = 'http://localhost:8000/get-meetings/'
+		const endpoint = 'http://192.168.1.130:8000/get-meetings/'
 		const response = await fetch(endpoint)
 		const json = await response.json()
 		return json
@@ -35,7 +35,7 @@ function NewContrib() {
         const formData = new FormData(e.target.form)
         
         try {
-            const response = await fetch("http://localhost:8000/upload-contribs/", {
+            const response = await fetch("http://192.168.1.130:8000/upload-contribs/", {
                 method: "POST",
                 body: formData,
             });
@@ -59,7 +59,7 @@ function NewContrib() {
                     <Description>
                         Baixar, preencher e fazer upload do modelo a seguir, preenchendo todos valores da coluna ações.
                         <br></br>
-                        <a href='http://localhost:8000/contrib-model-download' className='text-warning'>Download</a>
+                        <a href='http://192.168.1.130:8000/contrib-model-download' className='text-warning'>Download</a>
                     </Description>
                     <form className='d-flex flex-column gap-2'>
                         <div className="form-group">

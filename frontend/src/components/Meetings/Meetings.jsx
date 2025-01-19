@@ -14,7 +14,7 @@ export default function Meetings() {
     }, [])
 
     async function getData() {
-        const endpoint = 'http://localhost:8000/get-meetings/'
+        const endpoint = 'http://192.168.1.130:8000/get-meetings/'
         const response = await fetch(endpoint)
         const json = await response.json()
         return json
@@ -23,7 +23,7 @@ export default function Meetings() {
     async function handleDeleteMeeting(e) {    
         const meetingId = e.target.getAttribute('data-meeting-id');
         try {
-            const response = await fetch("http://localhost:8000/delete-meeting/", {
+            const response = await fetch("http://192.168.1.130:8000/delete-meeting/", {
                 method: "POST",
                 headers: {
                     'Accept': 'application/json',

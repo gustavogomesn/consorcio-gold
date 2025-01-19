@@ -15,7 +15,7 @@ export default function Loans() {
 	}, [])
 
 	async function getData() {
-		const endpoint = 'http://localhost:8000/get-loans/'
+		const endpoint = 'http://192.168.1.130:8000/get-loans/'
 		const response = await fetch(endpoint)
 		const json = await response.json()
 		return json

@@ -1,0 +1,38 @@
+version: '3.9'
+services:
+  postgres:
+    image: postgres
+    environment:
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=gold
+    volumes:
+      - /home/gustavo/consorcio-gold/data:/var/lib/postgresql/data
+    # this avoid backend init while postgres still loading
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  backend:
+    build: 
+      context: backend
+      dockerfile: Dockerfile
+    env_file:
+      - backend/.env
+    stdin_open: true
+    tty: true
+    ports:
+      - 8000:8000
+    depends_on:
+      postgres:
+        condition: service_healthy
+  frontend:
+    build: 
+      context: frontend
+      dockerfile: Dockerfile
+    ports:
+      - 5173:5173
+    stdin_open: true
+    tty: true
+    depends_on:
+      - backend

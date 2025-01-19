@@ -14,7 +14,7 @@ export default function Members() {
 	}, [])
 
 	async function getData() {
-		const endpoint = 'http://localhost:8000/get-members/'
+		const endpoint = 'http://192.168.1.130:8000/get-members/'
 		const response = await fetch(endpoint)
 		const json = await response.json()
 		return json

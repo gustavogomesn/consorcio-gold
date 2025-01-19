@@ -20,7 +20,7 @@ const NewMembers = () => {
         formData.append("file", file);
 
         try {
-            const response = await fetch("http://localhost:8000/upload-members/", {
+            const response = await fetch("http://192.168.1.130:8000/upload-members/", {
                 method: "POST",
                 body: formData,
             });

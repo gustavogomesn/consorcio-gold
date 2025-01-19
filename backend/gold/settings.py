@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,10 +21,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-a@5!^q^1$z8-)6+514s@=_yj9e_gd)155lv676c)l0#2fm96%p'
+SECRET_KEY = os.environ['DJANGO_SECRET_KEY']
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ['DEBUG']
 
 # Application definition
 
@@ -77,12 +78,12 @@ WSGI_APPLICATION = 'gold.wsgi.application'
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": "gold",
-        "USER": "postgres",
-        "PASSWORD": "password",
-        "HOST": "localhost",
-        "PORT": "5432",
+        "ENGINE": os.environ['DB_ENGINE'],
+        "NAME": os.environ['DB_NAME'],
+        "USER": os.environ['DB_USER'],
+        "PASSWORD": os.environ['DB_PASSWORD'],
+        "HOST": os.environ['DB_HOST'],
+        "PORT": os.environ['DB_PORT'],
     }
 }
 
@@ -131,9 +132,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ALLOW_ALL_ORIGINS = True
 
 CSRF_TRUSTED_ORIGINS = [
-    'http://localhost:5173'
+    f'http://{os.environ['ALLOWED_HOST']}:5173'
 ]
 
 ALLOWED_HOSTS = [
-    'localhost'
+    os.environ['ALLOWED_HOST']
 ]

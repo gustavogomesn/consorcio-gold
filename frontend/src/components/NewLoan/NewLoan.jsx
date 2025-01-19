@@ -26,14 +26,14 @@ function NewLoan() {
 	}, [])
 
 	async function getMembers() {
-		const endpoint = 'http://localhost:8000/get-members/'
+		const endpoint = 'http://192.168.1.130:8000/get-members/'
 		const response = await fetch(endpoint)
 		const json = await response.json()
 		return json
 	}
 
 	async function getMeetings() {
-		const endpoint = 'http://localhost:8000/get-meetings/'
+		const endpoint = 'http://192.168.1.130:8000/get-meetings/'
 		const response = await fetch(endpoint)
 		const json = await response.json()
 		return json
@@ -48,7 +48,7 @@ function NewLoan() {
         setIsOpen(false)
     }
 
-    // each member can take a 3x loan, based on value of your stocks, soon i need to migrate this logic to backend
+    // each member can take a 3x loan, based on value of your stocks, soon i need to migrate this logic to 192.168.1.130
     function handleChangeOfBorrower(e){
         const selectedOption = e.target.options[e.target.selectedIndex]
         let stocks = selectedOption.getAttribute('data-stocks')
@@ -72,7 +72,7 @@ function NewLoan() {
         const formData = new FormData(e.target.form)
         
         try {
-            const response = await fetch("http://localhost:8000/new-loan/", {
+            const response = await fetch("http://192.168.1.130:8000/new-loan/", {
                 method: "POST",
                 body: formData,
             });

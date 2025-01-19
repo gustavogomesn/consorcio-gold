@@ -21,7 +21,7 @@ function NewMeeting() {
         const formData = new FormData(e.target.form)
         
         try {
-            const response = await fetch("http://localhost:8000/new-meeting/", {
+            const response = await fetch("http://192.168.1.130:8000/new-meeting/", {
                 method: "POST",
                 body: formData,
             });
