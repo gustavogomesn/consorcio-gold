@@ -132,7 +132,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ALLOW_ALL_ORIGINS = True
 
 CSRF_TRUSTED_ORIGINS = [
-    f'http://{os.environ['ALLOWED_HOST']}:5173'
+    f'http://{os.environ["ALLOWED_HOST"]}:5173'
 ]
 
 ALLOWED_HOSTS = [

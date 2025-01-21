@@ -1,9 +1,10 @@
 from django.http import JsonResponse, HttpResponse
-from .models import Members, Loans, Meetings, TemporaryEntries
-from .forms import UploadFileForm
 from django.views.decorators.csrf import csrf_exempt
+from django.db.models import Sum
 from datetime import date
 from dateutil.relativedelta import relativedelta
+from .models import Members, Loans, Meetings, TemporaryEntries, MeetingEntries
+from .forms import UploadFileForm
 import openpyxl
 import json
 import io
@@ -39,6 +40,32 @@ def delete_meeting(request):
         return JsonResponse({'status': 'Meeting deleted'})
     return JsonResponse({'status': 'Method not allowed'})
 
+def show_meeting(request, meeting_id):
+    temporary_entries = list(TemporaryEntries.objects.filter(meeting_id=meeting_id, type='stocks').values('id', 'member__name', 'value'))
+    temporary_payments = list(TemporaryEntries.objects.select_related('member').filter(meeting_id=meeting_id, type='loan-payment').values('id', 'member__name', 'value'))
+    loans = list(Loans.objects.filter(meeting_id=meeting_id).values())
+    meeting_date = list(Meetings.objects.filter(id=meeting_id).values())[0]['date']
+    return JsonResponse({'temporary_entries': temporary_entries,
+                         'temporary_payments': temporary_payments,
+                         'loans': loans,
+                         'meeting_date': meeting_date})
+
+def end_meeting(request, meeting_id):
+    temporary_entries = TemporaryEntries.objects.filter(meeting_id=meeting_id).values()
+    meeting_entries = [
+        MeetingEntries(**entry)
+    for entry in temporary_entries
+    ]
+    MeetingEntries.objects.bulk_create(meeting_entries)
+    TemporaryEntries.objects.all().delete()
+    meeting = Meetings.objects.get(id=meeting_id)
+    meeting.finished = True
+    meeting.save()
+    # HANDLE LOAN PAYMENTS
+    # HANDLE LOAN PAYMENTS
+    # HANDLE LOAN PAYMENTS
+    # HANDLE LOAN PAYMENTS
+    return JsonResponse({'status': 'Meeting finished'})
 def get_members(request):
     members = list(Members.objects.order_by('number').values())
     return JsonResponse({'members': members})
@@ -108,27 +135,14 @@ def get_loans(request):
     return JsonResponse({'loans': loans})
 
 @csrf_exempt  
-def loan_payment(request):
-    if request.method == "POST":
-        data = dict(request.POST.items())
-        print(data)
-        # loan = Loans.objects.filter(id = data['loan-id'])
-        # loan.remaining_value = loan.value - data.payment
-        # loan.fee_by_month = loan.remaining_value * LOAN_FEE
-        # loan.save()
-        return JsonResponse({'status': 'Loan Deleted'})
-    return JsonResponse({'status': 'Method not allowed'})
-
-@csrf_exempt  
 def loan_payment_temporarily(request):
     if request.method == "POST":
         data = dict(request.POST.items())
-        
+        print(data)
         meeting = Meetings.objects.get(id = data['meeting_id'])   
         loan = Loans.objects.get(id = data['loan_id'])
         loan_dict = Loans.objects.filter(id = data['loan_id']).values()[0]
         member = Members.objects.get(name = loan_dict['borrower'])
-        print(meeting)
         loan = TemporaryEntries(meeting = meeting, loan = loan, member = member, type='loan-payment', value=data['payment'])
         loan.save()
         return JsonResponse({'status': 'Loan Deleted'})
@@ -176,17 +190,25 @@ def handle_upload_contribs(file, meeting_id):
             contrib = {
                 'number': 0,
                 'name': '',
-                'value': 0
+                'value': '',
+                'type': 'stocks',
+                'meeting_id': meeting_id
             }
-            for c in range(1, columns):
+            for c in range(1, columns+1):
                 contrib[keys[c-1]] = sheet.cell(r+1, c).value
-            print(contrib)
-            # contrib['type'] = 'stocks'
-            # contrib['meeting_id'] = meeting_id
-            # contrib['member_id'] = list(Members.objects.filter(number=contrib['number']).values())[0].id
-            # del contrib['number'], contrib['name']
-            # m = TemporaryEntries(**contrib)
-            # m.save()
+            contrib['member_id'] = list(Members.objects.filter(number=contrib['number']).values())[0]['id']
+            del contrib['number'], contrib['name']
+            temp = TemporaryEntries(**contrib)
+            temp.save()
+            
+        sum_of_stocks = TemporaryEntries.objects.filter(type='stocks').aggregate(Sum('value'))
+        print(sum_of_stocks)
+        meeting_selected = Meetings.objects.get(Id=meeting_id)
+        meeting_selected.stocks = sum_of_stocks
+        meeting_selected.save(['stocks'])
+        
+        return JsonResponse({'status': 'Contribution uploaded successfully'})
+            
     except:
         return JsonResponse({'status': 'This file isnt a spreadsheet'})
     

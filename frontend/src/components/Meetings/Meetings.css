@@ -1,7 +1,7 @@
-.meetings-table tbody tr button{
+.meetings-table tbody tr button, .meetings-table tbody tr a{
     display: none;
 }
 
-.meetings-table tbody tr:hover button{
+.meetings-table tbody tr:hover button, .meetings-table tbody tr:hover a{
     display: block;
 }

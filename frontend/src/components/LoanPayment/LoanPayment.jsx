@@ -19,14 +19,14 @@ function LoanPayment() {
 	}, [])
 
 	async function getLoans() {
-		const endpoint = 'http://192.168.1.130:8000/get-loans/'
+		const endpoint = 'http://192.168.1.115:8000/get-loans/'
 		const response = await fetch(endpoint)
 		const json = await response.json()
 		return json
 	}
 
 	async function getMeetings() {
-		const endpoint = 'http://192.168.1.130:8000/get-meetings/'
+		const endpoint = 'http://192.168.1.115:8000/get-meetings/'
 		const response = await fetch(endpoint)
 		const json = await response.json()
 		return json
@@ -54,7 +54,7 @@ function LoanPayment() {
         const formData = new FormData(e.target.form)
         
         try {
-            const response = await fetch("http://192.168.1.130:8000/loan-payment-temporarily/", {
+            const response = await fetch("http://192.168.1.115:8000/loan-payment-temporarily/", {
                 method: "POST",
                 body: formData,
             });
@@ -68,7 +68,7 @@ function LoanPayment() {
 
     return (
     <>
-        <button onClick={() => setIsOpen(true)} className='dropdown-item' >Pagamento de empréstimo</button>
+        <button onClick={() => setIsOpen(true)} className='btn btn-primary' >Pagamento de empréstimo</button>
         <Fade in={isOpen} timeout={200}>
             <Dialog open={isOpen} onClose={() => setIsOpen(false)} className="relative z-50 centered" transition>
                 <div className="p-4">

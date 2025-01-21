@@ -14,7 +14,7 @@ function NewContrib() {
 	}, [])
 
     async function getMeetings() {
-		const endpoint = 'http://192.168.1.130:8000/get-meetings/'
+		const endpoint = `http://${import.meta.env.VITE_ENDPOINT}:8000/get-meetings/`
 		const response = await fetch(endpoint)
 		const json = await response.json()
 		return json
@@ -27,7 +27,7 @@ function NewContrib() {
 
 
     function handleFileChange(e){
-        setFileUploaded(!fileUploaded)
+        setFileUploaded(true)
     }
 
     async function handleFileSubmit(e){
@@ -35,7 +35,7 @@ function NewContrib() {
         const formData = new FormData(e.target.form)
         
         try {
-            const response = await fetch("http://192.168.1.130:8000/upload-contribs/", {
+            const response = await fetch(`http://${import.meta.env.VITE_ENDPOINT}:8000/upload-contribs/`, {
                 method: "POST",
                 body: formData,
             });
@@ -43,14 +43,14 @@ function NewContrib() {
             console.error("Error creating meeting:", error);
         }
         
-        // window.location.reload()
+        window.location.reload()
         
     }
 
 
     return (
     <>
-        <button onClick={() => setIsOpen(true)} className='dropdown-item' >Novos Aportes</button>
+        <button onClick={() => setIsOpen(true)} className='btn btn-primary' >Novos Aportes</button>
         <Fade in={isOpen} timeout={200}>
             <Dialog open={isOpen} onClose={() => setIsOpen(false)} className="relative z-50 centered" transition>
                 <div className="p-4">
@@ -59,7 +59,7 @@ function NewContrib() {
                     <Description>
                         Baixar, preencher e fazer upload do modelo a seguir, preenchendo todos valores da coluna ações.
                         <br></br>
-                        <a href='http://192.168.1.130:8000/contrib-model-download' className='text-warning'>Download</a>
+                        <a href={`http://${import.meta.env.VITE_ENDPOINT}:8000/contrib-model-download`} className='text-warning'>Download</a>
                     </Description>
                     <form className='d-flex flex-column gap-2'>
                         <div className="form-group">
@@ -71,12 +71,12 @@ function NewContrib() {
                             </select>
                         </div>
                         <div className="mb-3 form-group">
-                            <label class="form-label">Importar modelo</label>
-                            <input class="form-control" type="file" name='file' onChange={handleFileChange} />
+                            <label className="form-label">Importar modelo</label>
+                            <input className="form-control" type="file" name='file' onChange={handleFileChange} />
                         </div>
                         <div className="d-flex gap-2">
                             <button className='btn btn-light' onClick={handleCancelButton}>Cancelar</button>
-                            <button className="btn btn-success" disabled={!fileUploaded} onClick={handleFileSubmit}>Agendar</button>
+                            <button className="btn btn-success" disabled={!fileUploaded} onClick={handleFileSubmit}>Aportar</button>
                         </div>
                     </form>
                 </DialogPanel>

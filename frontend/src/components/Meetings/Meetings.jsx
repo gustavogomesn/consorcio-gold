@@ -14,7 +14,7 @@ export default function Meetings() {
     }, [])
 
     async function getData() {
-        const endpoint = 'http://192.168.1.130:8000/get-meetings/'
+        const endpoint = `http://${import.meta.env.VITE_ENDPOINT}:8000/get-meetings/`
         const response = await fetch(endpoint)
         const json = await response.json()
         return json
@@ -23,7 +23,7 @@ export default function Meetings() {
     async function handleDeleteMeeting(e) {    
         const meetingId = e.target.getAttribute('data-meeting-id');
         try {
-            const response = await fetch("http://192.168.1.130:8000/delete-meeting/", {
+            const response = await fetch(`http://${import.meta.env.VITE_ENDPOINT}:8000/delete-meeting/`, {
                 method: "POST",
                 headers: {
                     'Accept': 'application/json',
@@ -70,13 +70,12 @@ export default function Meetings() {
                         <td>{meeting.fine}</td>
                         <td>{meeting.finished ? 'Encerrada' : 'Em andamento'}</td>
                         <td>
-                            <div className='d-flex'>
+                            <div className='d-flex gap-2'>
                                 {meeting.finished ? <></>
                                     : 
                                     <>
-                                    <button data-meeting-id={meeting.id}>Editar</button>
-                                    <button data-meeting-id={meeting.id} onClick={handleDeleteMeeting} >Excluir</button>
-                                    <button data-meeting-id={meeting.id}>Encerrar</button>
+                                    <a className='btn btn-sm btn-primary' href={`reuniao/${meeting.id}`}>Iniciar</a>
+                                    <button className='btn btn-sm btn-danger' data-meeting-id={meeting.id} onClick={handleDeleteMeeting} >Excluir</button>
                                     </>
                                     }
                             </div>

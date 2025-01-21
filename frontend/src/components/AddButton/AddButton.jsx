@@ -13,21 +13,7 @@ export default function AddButton() {
 			</a>
 			<ul className="dropdown-menu dropdown-menu-dark text-small shadow">
 				<li>
-					<a className="dropdown-item" href="/novos-membros">
-						Carregar membros
-					</a>
-				</li>
-				<li>
 					<NewMeeting/>
-				</li>
-				<li>
-					<NewLoan/>
-				</li>
-				<li>
-					<LoanPayment />
-				</li>
-				<li>
-					<NewContrib />
 				</li>
 			</ul>
 		</div>
