@@ -54,6 +54,7 @@ export default function Meetings() {
                 <th scope="col">Data</th>
                 <th scope="col">Ações compradas</th>
                 <th scope="col">Empréstimos tomados</th>
+                <th scope="col">Pagamento de empréstimos</th>
                 <th scope="col">Juros</th>
                 <th scope="col">Multas</th>
                 <th scope="col">Status</th>
@@ -65,9 +66,10 @@ export default function Meetings() {
                     <tr key={meeting.id}>
                         <th scope="row">{meeting.date}</th>
                         <td>{meeting.stocks}</td>
-                        <td>{meeting.loans_made}</td>
-                        <td>{meeting.fees}</td>
-                        <td>{meeting.fine}</td>
+                        <td>R$ {meeting.loans_made}</td>
+                        <td>R$ {meeting.loans_paid}</td>
+                        <td>R$ {meeting.fees}</td>
+                        <td>R$ {meeting.fines}</td>
                         <td>{meeting.finished ? 'Encerrada' : 'Em andamento'}</td>
                         <td>
                             <div className='d-flex gap-2'>

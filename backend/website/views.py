@@ -1,9 +1,9 @@
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
-from django.db.models import Sum
+from django.db.models import Sum, Q
 from datetime import date
 from dateutil.relativedelta import relativedelta
-from .models import Members, Loans, Meetings, TemporaryEntries, MeetingEntries
+from .models import Members, Loans, Meetings, TemporaryEntries, MeetingEntries, Fine
 from .forms import UploadFileForm
 import openpyxl
 import json
@@ -44,13 +44,53 @@ def show_meeting(request, meeting_id):
     temporary_entries = list(TemporaryEntries.objects.filter(meeting_id=meeting_id, type='stocks').values('id', 'member__name', 'value'))
     temporary_payments = list(TemporaryEntries.objects.select_related('member').filter(meeting_id=meeting_id, type='loan-payment').values('id', 'member__name', 'value'))
     loans = list(Loans.objects.filter(meeting_id=meeting_id).values())
+    fees_to_pay = list(Loans.objects.filter(isActive=True).filter(~Q(meeting_id=meeting_id)).values())
+    fines_to_pay = list(Fine.objects.select_related('member').filter(paid=False).filter(~Q(meeting_id=meeting_id)).values('id', 'member__name', 'reason', 'value'))
     meeting_date = list(Meetings.objects.filter(id=meeting_id).values())[0]['date']
     return JsonResponse({'temporary_entries': temporary_entries,
                          'temporary_payments': temporary_payments,
+                         'fees_to_pay': fees_to_pay,
+                         'fines_to_pay': fines_to_pay,
                          'loans': loans,
                          'meeting_date': meeting_date})
 
 def end_meeting(request, meeting_id):
+    
+    # MAKING FEE PAYMENTS
+    fees_to_pay = Loans.objects.filter(isActive=True).filter(~Q(meeting_id=meeting_id)).values()
+    meeting_entries_fees = [
+        MeetingEntries(**{
+            'type': 'fee',
+            'value': entry['fee_by_month'],
+            'meeting_id': meeting_id,
+            'member_id': entry['member_id'],
+            'loan_id': entry['id']
+        })
+    for entry in fees_to_pay
+    ]
+    MeetingEntries.objects.bulk_create(meeting_entries_fees)
+    
+    # MAKING FINE PAYMENTS
+    fines_to_pay = Fine.objects.filter(paid=False).filter(~Q(meeting_id=meeting_id)).values()
+    meeting_entries_fines = []
+    for entry in fines_to_pay:
+        # Populating entries
+        meeting_entries_fines.append(
+            MeetingEntries(**{
+                'type': 'fine',
+                'value': entry['value'],
+                'meeting_id': meeting_id,
+                'member_id': entry['member_id'],
+            })
+        )
+        
+        # Paiding fines
+        fine = Fine.objects.get(id=entry['id'])
+        fine.paid = True
+        fine.save()
+    MeetingEntries.objects.bulk_create(meeting_entries_fines)
+    
+    # MAKING CONTIBUITIONS
     temporary_entries = TemporaryEntries.objects.filter(meeting_id=meeting_id).values()
     meeting_entries = [
         MeetingEntries(**entry)
@@ -58,13 +98,34 @@ def end_meeting(request, meeting_id):
     ]
     MeetingEntries.objects.bulk_create(meeting_entries)
     TemporaryEntries.objects.all().delete()
+    
+    # UPDATING NUMBERS OF MEETING AND ENDING IT
+    sum_of_stocks = MeetingEntries.objects.filter(type='stocks', meeting_id=meeting_id).aggregate(Sum('value'))
+    sum_of_loan_made = Loans.objects.filter(meeting_id=meeting_id).aggregate(Sum('value'))
+    sum_of_loan_payments = MeetingEntries.objects.filter(type='loan-payment', meeting_id=meeting_id).aggregate(Sum('value'))
+    sum_of_fees = MeetingEntries.objects.filter(type='fee', meeting_id=meeting_id).aggregate(Sum('value'))
+    sum_of_fines = MeetingEntries.objects.filter(type='fine', meeting_id=meeting_id).aggregate(Sum('value'))
     meeting = Meetings.objects.get(id=meeting_id)
+    meeting.stocks = 0 if sum_of_stocks['value__sum'] == None else sum_of_stocks['value__sum']
+    meeting.loans_made = 0 if sum_of_loan_made['value__sum'] == None else sum_of_loan_made['value__sum']
+    meeting.loans_paid = 0 if sum_of_loan_payments['value__sum'] == None else sum_of_loan_payments['value__sum']
+    meeting.fees = 0 if sum_of_fees['value__sum'] == None else sum_of_fees['value__sum']
+    meeting.fines = 0 if sum_of_fines['value__sum'] == None else sum_of_fines['value__sum']
     meeting.finished = True
     meeting.save()
-    # HANDLE LOAN PAYMENTS
-    # HANDLE LOAN PAYMENTS
-    # HANDLE LOAN PAYMENTS
-    # HANDLE LOAN PAYMENTS
+    
+    # UPDATING REMAING VALUE OF LOANS
+    loan_payments = MeetingEntries.objects.filter(type='loan-payment', meeting_id=meeting_id).values()
+    if len(loan_payments) != 0:
+        for lp in loan_payments:
+            loan = Loans.objects.get(id=lp['loan_id'])
+            loan.remaining_value -= lp['value']
+            loan.fee_by_month = loan.remaining_value * LOAN_FEE
+            if loan.remaining_value == 0:
+                loan.isActive = False
+            loan.save()
+    
+
     return JsonResponse({'status': 'Meeting finished'})
 def get_members(request):
     members = list(Members.objects.order_by('number').values())
@@ -167,18 +228,6 @@ def contrib_model_download(request):
 
     return response
 
-@csrf_exempt  
-def new_contribs(request):
-    if request.method == "POST":
-        data = dict(request.POST.items())
-        print(data)
-        # loan = Loans.objects.filter(id = data['loan-id'])
-        # loan.remaining_value = loan.value - data.payment
-        # loan.fee_by_month = loan.remaining_value * LOAN_FEE
-        # loan.save()
-        return JsonResponse({'status': 'Loan Deleted'})
-    return JsonResponse({'status': 'Method not allowed'})
-
 def handle_upload_contribs(file, meeting_id):
     try:
         wkb = openpyxl.load_workbook(file)
@@ -200,12 +249,6 @@ def handle_upload_contribs(file, meeting_id):
             del contrib['number'], contrib['name']
             temp = TemporaryEntries(**contrib)
             temp.save()
-            
-        sum_of_stocks = TemporaryEntries.objects.filter(type='stocks').aggregate(Sum('value'))
-        print(sum_of_stocks)
-        meeting_selected = Meetings.objects.get(Id=meeting_id)
-        meeting_selected.stocks = sum_of_stocks
-        meeting_selected.save(['stocks'])
         
         return JsonResponse({'status': 'Contribution uploaded successfully'})
             
@@ -220,3 +263,16 @@ def upload_contribs(request):
         return JsonResponse({'status': 'File uploaded'})
     else:
         return JsonResponse({'status': 'Method isnt POST'})
+    
+@csrf_exempt
+def new_fine(request):
+    if request.method == "POST":
+        data = dict(request.POST.items())
+        fine = Fine(**{
+                    'reason': data['reason'],
+                    'value': data['fine-value'],
+                    'member_id': data['member_id'],
+                    'meeting_id': data['meeting_id']
+                       })
+        fine.save()
+        return JsonResponse({'status': 'Fine registered'})

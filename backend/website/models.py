@@ -11,8 +11,9 @@ class Meetings(models.Model):
     date = models.DateField()
     stocks = models.IntegerField(default=0)
     loans_made = models.FloatField(default=0)
+    loans_paid = models.FloatField(default=0)
     fees = models.FloatField(default=0)
-    fine = models.FloatField(default=0)
+    fines = models.FloatField(default=0)
     finished = models.BooleanField(default=False)
 
 class Loans(models.Model):
@@ -40,3 +41,11 @@ class MeetingEntries(models.Model):
     loan = models.ForeignKey(Loans, on_delete=models.CASCADE, null=True, blank=True)
     type = models.CharField(max_length=50)
     value = models.FloatField()
+    
+    
+class Fine(models.Model):
+    meeting = models.ForeignKey(Meetings, on_delete=models.CASCADE)
+    member = models.ForeignKey(Members, on_delete=models.CASCADE, related_name='fines')
+    reason = models.CharField(max_length=100)
+    value = models.FloatField()
+    paid = models.BooleanField(default=False)

@@ -16,4 +16,5 @@ urlpatterns = [
     path('loan-payment-temporarily/', views.loan_payment_temporarily, name='loan-payment-temporarily'),
     path('contrib-model-download/', views.contrib_model_download, name='contrib-model-download'),
     path('upload-contribs/', views.upload_contribs, name='upload-contribs'),
+    path('new-fine/', views.new_fine, name='new-fine'),
 ]

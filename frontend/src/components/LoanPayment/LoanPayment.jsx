@@ -80,7 +80,7 @@ function LoanPayment() {
                             <select className='form-control' id='borrower-input' name='loan_id' onChange={handleChangeOfBorrower}>
                                 <option selected disabled>Selecionar tomador</option>
                                 {loans.map((loan) => (
-                                    <option key={loan.id} value={loan.id} data-loan-value={loan.value}>{loan.borrower}</option>
+                                    loan.isActive && <option key={loan.id} value={loan.id} data-loan-value={loan.remaining_value}>{loan.borrower}</option>
                                 ))}
                             </select>
                         </div>
