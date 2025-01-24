@@ -73,7 +73,9 @@ export default function Meetings() {
                         <td>{meeting.finished ? 'Encerrada' : 'Em andamento'}</td>
                         <td>
                             <div className='d-flex gap-2'>
-                                {meeting.finished ? <></>
+                                {meeting.finished ? <>
+                                    <a className='btn btn-sm btn-success' href={`http://${import.meta.env.VITE_ENDPOINT}:8000/minute-download/${meeting.id}`}>Ata</a>
+                                    </>
                                     : 
                                     <>
                                     <a className='btn btn-sm btn-primary' href={`reuniao/${meeting.id}`}>Iniciar</a>

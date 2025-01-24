@@ -5,6 +5,7 @@ from datetime import date
 from dateutil.relativedelta import relativedelta
 from .models import Members, Loans, Meetings, TemporaryEntries, MeetingEntries, Fine
 from .forms import UploadFileForm
+from .utils import GenerateMeetingMinute
 import openpyxl
 import json
 import io
@@ -276,3 +277,16 @@ def new_fine(request):
                        })
         fine.save()
         return JsonResponse({'status': 'Fine registered'})
+
+def minute_download(request, meeting_id):
+    
+    pdf = GenerateMeetingMinute()
+    
+    generated_minute = io.BytesIO()
+    pdf.generate(meeting_id, 2, 3, generated_minute)
+    generated_minute.seek(0)
+
+    response = HttpResponse(generated_minute, content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="minute.pdf"'
+
+    return response

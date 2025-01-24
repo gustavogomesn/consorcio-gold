@@ -17,4 +17,5 @@ urlpatterns = [
     path('contrib-model-download/', views.contrib_model_download, name='contrib-model-download'),
     path('upload-contribs/', views.upload_contribs, name='upload-contribs'),
     path('new-fine/', views.new_fine, name='new-fine'),
+    path('minute-download/<meeting_id>', views.minute_download, name='minute-download'),
 ]
