@@ -57,6 +57,7 @@ export default function Meetings() {
                 <th scope="col">Pagamento de empréstimos</th>
                 <th scope="col">Juros</th>
                 <th scope="col">Multas</th>
+                <th scope="col">Fundo</th>
                 <th scope="col">Status</th>
                 <th scope="col"></th>
                 </tr>
@@ -66,10 +67,31 @@ export default function Meetings() {
                     <tr key={meeting.id}>
                         <th scope="row">{meeting.date}</th>
                         <td>{meeting.stocks}</td>
-                        <td>R$ {meeting.loans_made}</td>
-                        <td>R$ {meeting.loans_paid}</td>
-                        <td>R$ {meeting.fees}</td>
-                        <td>R$ {meeting.fines}</td>
+                        <td>{meeting.loans_made.toLocaleString('pt-BR', {
+                                                    style: 'currency',
+                                                    currency: 'BRL',
+                                                })}
+                        </td>
+                        <td>{meeting.loans_paid.toLocaleString('pt-BR', {
+                                                    style: 'currency',
+                                                    currency: 'BRL',
+                                                })}
+                        </td>
+                        <td>{meeting.fees.toLocaleString('pt-BR', {
+                                                style: 'currency',
+                                                currency: 'BRL',
+                                            })}
+                        </td>
+                        <td>{meeting.fines.toLocaleString('pt-BR', {
+                                                style: 'currency',
+                                                currency: 'BRL',
+                                            })}
+                        </td>
+                        <td>{meeting.fund.toLocaleString('pt-BR', {
+                                                style: 'currency',
+                                                currency: 'BRL',
+                                            })}
+                        </td>
                         <td>{meeting.finished ? 'Encerrada' : 'Em andamento'}</td>
                         <td>
                             <div className='d-flex gap-2'>

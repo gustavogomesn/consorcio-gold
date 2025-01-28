@@ -8,6 +8,7 @@ import LoanPayment from '../LoanPayment/LoanPayment'
 import NewContrib from '../NewContrib/NewContrib'
 import NewLoan from '../NewLoan/NewLoan'
 import NewFine from '../NewFine/NewFine'
+import FundWithdraw from '../FundWithdraw/FundWithdraw'
 
 export default function SelectedMeeting() {
     const params= useParams()
@@ -17,6 +18,7 @@ export default function SelectedMeeting() {
     const [feesToPay, setFeesToPay] = useState([])
     const [finesToPay, setFinesToPay] = useState([])
     const [loans, setLoans] = useState([])
+    const [fundMovement, setFundMovement] = useState([])
     const [meetingDate, setMeetingDate] = useState('')
 
     useEffect(() => {
@@ -26,6 +28,7 @@ export default function SelectedMeeting() {
             setFeesToPay(data.fees_to_pay)
             setFinesToPay(data.fines_to_pay)
             setLoans(data.loans)
+            setFundMovement(data.fund_movement)
             setMeetingDate(data.meeting_date)
         })
     }, [])
@@ -83,7 +86,11 @@ export default function SelectedMeeting() {
                         {feesToPay.map((fee) => (
                             <tr key={fee.id}>
                                 <td>{fee.borrower}</td>
-                                <td style={{width: '20%'}}>R$ {fee.fee_by_month}</td>
+                                <td style={{width: '20%'}}>{fee.fee_by_month.toLocaleString('pt-BR', {
+                                                                                    style: 'currency',
+                                                                                    currency: 'BRL',
+                                                                                })}
+                                </td>
                             </tr>
                         ))}
                     </tbody>
@@ -100,7 +107,11 @@ export default function SelectedMeeting() {
                         {loans.map((loan) => (
                             <tr key={loan.id}>
                                 <td>{loan.borrower}</td>
-                                <td style={{width: '20%'}}>R$ {loan.value}</td>
+                                <td style={{width: '20%'}}>{loan.value.toLocaleString('pt-BR', {
+                                                                            style: 'currency',
+                                                                            currency: 'BRL',
+                                                                        })}
+                                </td>
                             </tr>
                         ))}
                     </tbody>
@@ -121,7 +132,11 @@ export default function SelectedMeeting() {
                             <tr key={fine.id}>
                                 <td>{fine.member__name}</td>
                                 <td>{fine.reason}</td>
-                                <td style={{width: '15%'}}>R$ {fine.value}</td>
+                                <td style={{width: '15%'}}>{fine.value.toLocaleString('pt-BR', {
+                                                                            style: 'currency',
+                                                                            currency: 'BRL',
+                                                                        })}
+                                </td>
                             </tr>
                         ))}
                     </tbody>
@@ -138,7 +153,32 @@ export default function SelectedMeeting() {
                         {temporaryPayments.map((loanPayment) => (
                             <tr key={loanPayment.id}>
                                 <td>{loanPayment.member__name}</td>
-                                <td style={{width: '20%'}}>R$ {loanPayment.value}</td>
+                                <td style={{width: '20%'}}>{loanPayment.value.toLocaleString('pt-BR', {
+                                                                                    style: 'currency',
+                                                                                    currency: 'BRL',
+                                                                                })}
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                    </table>
+                    <table className="table table-dark table-hover" id='table-loan'>
+                    <h2 className="p-3">Movimentação do Fundo</h2>
+                    <thead>
+                        <tr>
+                        <th scope="col">Tipo</th>
+                        <th scope="col" style={{width: '20%'}}>Valor</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {fundMovement.map((fm) => (
+                            <tr key={fm.id}>
+                                <td>{fm.type == 'contribuition' ? 'Contribuição':'Resgate'}</td>
+                                <td style={{width: '20%'}}>{fm.value.toLocaleString('pt-BR', {
+                                                                            style: 'currency',
+                                                                            currency: 'BRL',
+                                                                        })}
+                                </td>
                             </tr>
                         ))}
                     </tbody>
@@ -150,6 +190,7 @@ export default function SelectedMeeting() {
                 <NewLoan />
                 <NewFine />
                 <LoanPayment />
+                <FundWithdraw />
                 <button className='btn btn-success' onClick={handleEndMeeting}>Encerrar</button>
             </div>
         </main>

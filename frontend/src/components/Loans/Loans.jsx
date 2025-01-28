@@ -27,26 +27,36 @@ export default function Loans() {
             <table className="table table-dark table-hover">
             <thead>
                 <tr>
-                    <th scope="col">Número</th>
+                    <th scope="col">Data</th>
                     <th scope="col">Situação</th>
                     <th scope="col">Tomador</th>
                     <th scope="col">Total</th>
                     <th scope="col">Restante</th>
                     <th scope="col">Juros Mensal</th>
-                    <th scope="col">Data</th>
                     <th scope="col">Vencimento</th>
                 </tr>
             </thead>
             <tbody>
 				{loans.map((loan) => (
 					<tr key={loan.id}>
-						<th scope="row">{loan.id}</th>
+						<td>{loan.date}</td>
 						<td>{loan.isActive? "Ativo" : "Quitado"}</td>
 						<td>{loan.borrower}</td>
-						<td>R$ {loan.value.toFixed(2)}</td>
-						<td>R$ {loan.remaining_value.toFixed(2)}</td>
-						<td>R$ {loan.fee_by_month.toFixed(2)}</td>
-						<td>{loan.date}</td>
+						<td>{loan.value.toLocaleString('pt-BR', {
+											style: 'currency',
+											currency: 'BRL',
+										})}
+						</td>
+						<td>{loan.remaining_value.toLocaleString('pt-BR', {
+											style: 'currency',
+											currency: 'BRL',
+										})}
+						</td>
+						<td>{loan.fee_by_month.toLocaleString('pt-BR', {
+											style: 'currency',
+											currency: 'BRL',
+										})}
+						</td>
 						<td>{loan.due_month}</td>
 					</tr>
 				))}

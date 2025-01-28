@@ -3,12 +3,13 @@ from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Sum, Q
 from datetime import date
 from dateutil.relativedelta import relativedelta
-from .models import Members, Loans, Meetings, TemporaryEntries, MeetingEntries, Fine
+from .models import Members, Loans, Meetings, TemporaryEntries, MeetingEntries, Fine, FundMovement
 from .forms import UploadFileForm
 from .utils import GenerateMeetingMinute
 import openpyxl
 import json
 import io
+import requests
 
 LOAN_FEE = 3/100
 MULT_ALLOWED_LOAN = 3
@@ -29,6 +30,15 @@ def new_meeting(request):
         data = dict(request.POST.items())
         meeting = Meetings(date = data['meeting-date'])
         meeting.save()
+        
+        # EVERY MEETING, THE FUND CONTRIBUTION IS REQUIRED TO ALL MEMBERS(member_id: 1 is only convencioned)
+        fundContrib = FundMovement(**{
+            'meeting': meeting,
+            'member_id': 1,
+            'value': 25*FUND_VALUE,
+            'type': 'contribuition'
+        })
+        fundContrib.save()
         return JsonResponse({'status': 'Meeting registered'})
     return JsonResponse({'status': 'Method not allowed'})
 
@@ -47,12 +57,14 @@ def show_meeting(request, meeting_id):
     loans = list(Loans.objects.filter(meeting_id=meeting_id).values())
     fees_to_pay = list(Loans.objects.filter(isActive=True).filter(~Q(meeting_id=meeting_id)).values())
     fines_to_pay = list(Fine.objects.select_related('member').filter(paid=False).filter(~Q(meeting_id=meeting_id)).values('id', 'member__name', 'reason', 'value'))
+    fund_movement = get_fund_movement(meeting_id)
     meeting_date = list(Meetings.objects.filter(id=meeting_id).values())[0]['date']
     return JsonResponse({'temporary_entries': temporary_entries,
                          'temporary_payments': temporary_payments,
                          'fees_to_pay': fees_to_pay,
                          'fines_to_pay': fines_to_pay,
                          'loans': loans,
+                         'fund_movement': fund_movement,
                          'meeting_date': meeting_date})
 
 def end_meeting(request, meeting_id):
@@ -100,18 +112,33 @@ def end_meeting(request, meeting_id):
     MeetingEntries.objects.bulk_create(meeting_entries)
     TemporaryEntries.objects.all().delete()
     
+    # REGISTERING FUND MOVIMENTION
+    fm = FundMovement.objects.filter(meeting_id=meeting_id).values()
+    fm_entries = [
+        MeetingEntries(**{
+            'type': 'fund_withdraw' if entry['type'] == '' else 'fund_contrib',
+            'value': entry['value'],
+            'meeting_id': meeting_id,
+            'member_id': entry['member_id'],
+        })
+    for entry in fm
+    ]
+    MeetingEntries.objects.bulk_create(fm_entries)
+    
     # UPDATING NUMBERS OF MEETING AND ENDING IT
-    sum_of_stocks = MeetingEntries.objects.filter(type='stocks', meeting_id=meeting_id).aggregate(Sum('value'))
-    sum_of_loan_made = Loans.objects.filter(meeting_id=meeting_id).aggregate(Sum('value'))
-    sum_of_loan_payments = MeetingEntries.objects.filter(type='loan-payment', meeting_id=meeting_id).aggregate(Sum('value'))
-    sum_of_fees = MeetingEntries.objects.filter(type='fee', meeting_id=meeting_id).aggregate(Sum('value'))
-    sum_of_fines = MeetingEntries.objects.filter(type='fine', meeting_id=meeting_id).aggregate(Sum('value'))
+    sum_of_stocks = MeetingEntries.objects.filter(type='stocks', meeting_id=meeting_id).aggregate(Sum('value'))['value__sum']
+    sum_of_loan_made = Loans.objects.filter(meeting_id=meeting_id).aggregate(Sum('value'))['value__sum']
+    sum_of_loan_payments = MeetingEntries.objects.filter(type='loan-payment', meeting_id=meeting_id).aggregate(Sum('value'))['value__sum']
+    sum_of_fees = MeetingEntries.objects.filter(type='fee', meeting_id=meeting_id).aggregate(Sum('value'))['value__sum']
+    sum_of_fines = MeetingEntries.objects.filter(type='fine', meeting_id=meeting_id).aggregate(Sum('value'))['value__sum']
+    sum_of_fund = MeetingEntries.objects.filter(type='fund_contrib', meeting_id=meeting_id).aggregate(Sum('value'))['value__sum'] - MeetingEntries.objects.filter(type='fund_withdraw', meeting_id=meeting_id).aggregate(Sum('value'))['value__sum']
     meeting = Meetings.objects.get(id=meeting_id)
-    meeting.stocks = 0 if sum_of_stocks['value__sum'] == None else sum_of_stocks['value__sum']
-    meeting.loans_made = 0 if sum_of_loan_made['value__sum'] == None else sum_of_loan_made['value__sum']
-    meeting.loans_paid = 0 if sum_of_loan_payments['value__sum'] == None else sum_of_loan_payments['value__sum']
-    meeting.fees = 0 if sum_of_fees['value__sum'] == None else sum_of_fees['value__sum']
-    meeting.fines = 0 if sum_of_fines['value__sum'] == None else sum_of_fines['value__sum']
+    meeting.stocks = 0 if sum_of_stocks == None else sum_of_stocks
+    meeting.loans_made = 0 if sum_of_loan_made == None else sum_of_loan_made
+    meeting.loans_paid = 0 if sum_of_loan_payments == None else sum_of_loan_payments
+    meeting.fees = 0 if sum_of_fees == None else sum_of_fees
+    meeting.fines = 0 if sum_of_fines == None else sum_of_fines
+    meeting.fund = 0 if sum_of_fund == None else sum_of_fund
     meeting.finished = True
     meeting.save()
     
@@ -125,9 +152,11 @@ def end_meeting(request, meeting_id):
             if loan.remaining_value == 0:
                 loan.isActive = False
             loan.save()
+            
     
 
     return JsonResponse({'status': 'Meeting finished'})
+
 def get_members(request):
     members = list(Members.objects.order_by('number').values())
     return JsonResponse({'members': members})
@@ -177,8 +206,9 @@ def new_loan(request):
         data['remaining_value'] = data['loan-value']
         data['fee_by_month'] = round(float(data['loan-value'])*LOAN_FEE, 2)
         del data['loan-value']
-        data['due_month'] = (date.today() + relativedelta(months=+6)).strftime('%m-%Y')
-        data['date'] = date.today()
+        print(data['meeting'].date)
+        data['date'] = data['meeting'].date
+        data['due_month'] = (data['date'] + relativedelta(months=+6)).strftime('%m-%Y')
         loan = Loans(**data)
         loan.save()
         return JsonResponse({'status': 'Loan registered'})
@@ -193,7 +223,7 @@ def delete_loan(request):
     return JsonResponse({'status': 'Method not allowed'})
 
 def get_loans(request):
-    loans = list(Loans.objects.values())
+    loans = list(Loans.objects.order_by('date', 'isActive').values())
     return JsonResponse({'loans': loans})
 
 @csrf_exempt  
@@ -280,13 +310,88 @@ def new_fine(request):
 
 def minute_download(request, meeting_id):
     
+    meeting = Meetings.objects.get(id=meeting_id)
+    meeting_entries = MeetingEntries.objects.filter(meeting_id=meeting_id).values('type', 'value', 'member__name')
+    loans = Loans.objects.filter(meeting_id=meeting_id).values('value', 'member__name', 'fee_by_month')
+    fund = FundMovement.objects.filter(meeting_id=meeting_id).values('value', 'type', 'reason')
+    summary = get_summary_data(meeting_id)
+
     pdf = GenerateMeetingMinute()
-    
     generated_minute = io.BytesIO()
-    pdf.generate(meeting_id, 2, 3, generated_minute)
+    pdf.generate(summary, meeting, meeting_entries, loans, fund,  generated_minute)
     generated_minute.seek(0)
 
     response = HttpResponse(generated_minute, content_type='application/pdf')
-    response['Content-Disposition'] = 'attachment; filename="minute.pdf"'
+    response['Content-Disposition'] = f'attachment; filename="Ata_{meeting.date}.pdf"'
 
     return response
+
+def get_summary(request, meeting_id=False):
+    if not meeting_id:
+        stocks = Meetings.objects.filter(finished = True).aggregate(Sum('stocks'))['stocks__sum']
+        stocks_amount = Meetings.objects.filter(finished = True).aggregate(Sum('stocks'))['stocks__sum'] * STOCK_VALUE 
+        fees = Meetings.objects.filter(finished = True).aggregate(Sum('fees'))['fees__sum']
+        fines = Meetings.objects.filter(finished = True).aggregate(Sum('fines'))['fines__sum']
+        loaned = Loans.objects.filter(isActive = True).aggregate(Sum('remaining_value'))['remaining_value__sum']
+        cash = stocks_amount + fees + fines - loaned
+        fund = Meetings.objects.filter(finished = True).aggregate(Sum('fund'))['fund__sum']
+        current_stock_value = (cash + loaned) / stocks
+        return JsonResponse({
+            'stocks': stocks,
+            'cash': cash,
+            'loaned': loaned,
+            'stock_value': current_stock_value,
+            'fund': fund
+        })
+    else:
+        stocks = Meetings.objects.filter(finished = True, id__lte = meeting_id).aggregate(Sum('stocks'))['stocks__sum']
+        stocks_amount = Meetings.objects.filter(finished = True, id__lte = meeting_id).aggregate(Sum('stocks'))['stocks__sum'] * STOCK_VALUE
+        fees = Meetings.objects.filter(finished = True, id__lte = meeting_id).aggregate(Sum('fees'))['fees__sum']
+        fines = Meetings.objects.filter(finished = True, id__lte = meeting_id).aggregate(Sum('fines'))['fines__sum']
+        loaned = Meetings.objects.filter(finished = True, id__lte = meeting_id).aggregate(Sum('loans_made'))['loans_made__sum'] - Meetings.objects.filter(finished = True, id__lte = meeting_id).aggregate(Sum('loans_paid'))['loans_paid__sum']
+        cash = stocks_amount + fees + fines - loaned
+        current_stock_value = (cash + loaned) / stocks
+        fund = Meetings.objects.filter(finished = True, id__lte = meeting_id).aggregate(Sum('fund'))['fund__sum']
+        return JsonResponse({
+            'stocks': stocks,
+            'cash': cash,
+            'loaned': loaned,
+            'stock_value': current_stock_value,
+            'fund': fund
+        })
+
+def get_summary_data(meeting_id):
+    stocks = Meetings.objects.filter(finished = True, id__lte = meeting_id).aggregate(Sum('stocks'))['stocks__sum']
+    stocks_amount = Meetings.objects.filter(finished = True, id__lte = meeting_id).aggregate(Sum('stocks'))['stocks__sum'] * STOCK_VALUE
+    fees = Meetings.objects.filter(finished = True, id__lte = meeting_id).aggregate(Sum('fees'))['fees__sum']
+    fines = Meetings.objects.filter(finished = True, id__lte = meeting_id).aggregate(Sum('fines'))['fines__sum']
+    loaned = Meetings.objects.filter(finished = True, id__lte = meeting_id).aggregate(Sum('loans_made'))['loans_made__sum'] - Meetings.objects.filter(finished = True, id__lte = meeting_id).aggregate(Sum('loans_paid'))['loans_paid__sum']
+    cash = stocks_amount + fees + fines - loaned
+    current_stock_value = (cash + loaned) / stocks
+    fund = Meetings.objects.filter(finished = True, id__lte = meeting_id).aggregate(Sum('fund'))['fund__sum']
+    return ({
+        'stocks': stocks,
+        'cash': cash,
+        'loaned': loaned,
+        'stock_value': current_stock_value,
+        'fund': fund
+    })
+
+# THIS ISNT A ROUTE, IS ONLY TO BE CONSUMED BY show_meeting ROUTE
+def get_fund_movement(meeting_id):
+    fm = list(FundMovement.objects.filter(meeting_id=meeting_id).values())
+    return fm
+
+@csrf_exempt
+def fund_withdraw(request):
+    if request.method == "POST":
+        data = dict(request.POST.items())
+        fund_movement = FundMovement(**{
+                    'reason': data['reason'],
+                    'value': data['fw-value'],
+                    'member_id': data['member_id'],
+                    'meeting_id': data['meeting_id']
+                       })
+        fund_movement.save()
+        return JsonResponse({'status': 'Fund Withdraw registered'})
+    return JsonResponse({'status': 'Method not allowed'})

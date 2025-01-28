@@ -18,4 +18,7 @@ urlpatterns = [
     path('upload-contribs/', views.upload_contribs, name='upload-contribs'),
     path('new-fine/', views.new_fine, name='new-fine'),
     path('minute-download/<meeting_id>', views.minute_download, name='minute-download'),
+    path('get-summary', views.get_summary, name='get-summary'),
+    path('get-summary/<meeting_id>', views.get_summary, name='get-summary'),
+    path('fund-withdraw', views.fund_withdraw, name='fund-withdraw'),
 ]

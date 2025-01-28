@@ -1,0 +1,12 @@
+.card-title {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 2rem;
+}
+
+.card-content {
+    font-size: 2rem;
+}
+
+.bg-purple {
+    background-color: var(--purple-dark);
+}
