@@ -104,11 +104,19 @@ def end_meeting(request, meeting_id):
     MeetingEntries.objects.bulk_create(meeting_entries_fines)
     
     # MAKING CONTIBUITIONS
+    # temporary_entries = TemporaryEntries.objects.filter(meeting_id=meeting_id).values()
+    # meeting_entries = [
+    #     MeetingEntries(**entry)
+    # for entry in temporary_entries
+    # ]
     temporary_entries = TemporaryEntries.objects.filter(meeting_id=meeting_id).values()
-    meeting_entries = [
-        MeetingEntries(**entry)
-    for entry in temporary_entries
-    ]
+    meeting_entries = []
+    for entry in temporary_entries:
+        meeting_entries.append(MeetingEntries(**entry))
+        if entry['type'] == 'stocks':
+            member = Members.objects.get(id=entry['member_id'])
+            member.stocks += entry['value']
+            member.save()
     MeetingEntries.objects.bulk_create(meeting_entries)
     TemporaryEntries.objects.all().delete()
     
@@ -131,7 +139,11 @@ def end_meeting(request, meeting_id):
     sum_of_loan_payments = MeetingEntries.objects.filter(type='loan-payment', meeting_id=meeting_id).aggregate(Sum('value'))['value__sum']
     sum_of_fees = MeetingEntries.objects.filter(type='fee', meeting_id=meeting_id).aggregate(Sum('value'))['value__sum']
     sum_of_fines = MeetingEntries.objects.filter(type='fine', meeting_id=meeting_id).aggregate(Sum('value'))['value__sum']
-    sum_of_fund = MeetingEntries.objects.filter(type='fund_contrib', meeting_id=meeting_id).aggregate(Sum('value'))['value__sum'] - MeetingEntries.objects.filter(type='fund_withdraw', meeting_id=meeting_id).aggregate(Sum('value'))['value__sum']
+    
+    fund_contrib_value = MeetingEntries.objects.filter(type='fund_contrib', meeting_id=meeting_id).aggregate(Sum('value'))['value__sum']
+    fund_withdraw_value = MeetingEntries.objects.filter(type='fund_withdraw', meeting_id=meeting_id).aggregate(Sum('value'))['value__sum']
+    sum_of_fund = (fund_contrib_value or 0) - (fund_withdraw_value or 0)
+    
     meeting = Meetings.objects.get(id=meeting_id)
     meeting.stocks = 0 if sum_of_stocks == None else sum_of_stocks
     meeting.loans_made = 0 if sum_of_loan_made == None else sum_of_loan_made
@@ -223,7 +235,7 @@ def delete_loan(request):
     return JsonResponse({'status': 'Method not allowed'})
 
 def get_loans(request):
-    loans = list(Loans.objects.order_by('date', 'isActive').values())
+    loans = list(Loans.objects.order_by('-date', '-isActive').values())
     return JsonResponse({'loans': loans})
 
 @csrf_exempt  
