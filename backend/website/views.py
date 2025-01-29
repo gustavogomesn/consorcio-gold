@@ -3,6 +3,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Sum, Q
 from datetime import date
 from dateutil.relativedelta import relativedelta
+import openpyxl.workbook
 from .models import Members, Loans, Meetings, TemporaryEntries, MeetingEntries, Fine, FundMovement
 from .forms import UploadFileForm
 from .utils import GenerateMeetingMinute
@@ -104,11 +105,6 @@ def end_meeting(request, meeting_id):
     MeetingEntries.objects.bulk_create(meeting_entries_fines)
     
     # MAKING CONTIBUITIONS
-    # temporary_entries = TemporaryEntries.objects.filter(meeting_id=meeting_id).values()
-    # meeting_entries = [
-    #     MeetingEntries(**entry)
-    # for entry in temporary_entries
-    # ]
     temporary_entries = TemporaryEntries.objects.filter(meeting_id=meeting_id).values()
     meeting_entries = []
     for entry in temporary_entries:
@@ -168,6 +164,15 @@ def end_meeting(request, meeting_id):
     
 
     return JsonResponse({'status': 'Meeting finished'})
+
+def members_model_download(request):
+    with open ('website/assets/modelo_membros.xlsx', 'rb') as file:
+        excel_file = file.read()
+
+    response = HttpResponse(excel_file, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename="modelo_membros.xlsx"'
+
+    return response
 
 def get_members(request):
     members = list(Members.objects.order_by('number').values())

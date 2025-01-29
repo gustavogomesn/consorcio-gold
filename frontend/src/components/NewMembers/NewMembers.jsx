@@ -29,6 +29,7 @@ const NewMembers = () => {
             const data = await response.json();
             if (response.ok) {
                 setMessage("File uploaded successfully!");
+                window.location.href = '/'
             } else {
                 setMessage(`Error: ${data.status}`);
             }
@@ -39,13 +40,20 @@ const NewMembers = () => {
     };
 
     return (
-        <div>
-            <h2>Upload Members File</h2>
-            <form onSubmit={handleSubmit}>
-                <input type="file" onChange={handleFileChange} />
-                <button type="submit">Upload</button>
+        <div className="d-flex align-items-center justify-content-center flex-column mt-5 gap-4">
+            <h2>Cadastrar Usuários</h2>
+            <p style={{width: '400px'}}>Faça download do modelo abaixo, preencha com todos os membros participantes, não deixando nenhuma columa em branco e envie o arquivo preenchido no formulário abaixo</p>
+            <a href={`http://${import.meta.env.VITE_ENDPOINT}:8000/members-model-download`} className='text-warning'>Download</a>
+            <form onSubmit={handleSubmit} className="mt-3">
+                <div className="form-group">
+                    <input type="file" onChange={handleFileChange} className="form-control" />
+                    <button type="submit" className="btn btn-secondary mt-2">Upload</button>
+                </div>
             </form>
-            {message && <p>{message}</p>}
+            {message && <>
+                <span>{message}</span>
+                <a href="/" className="text-success">Voltar para página inicial</a>
+            </>}
         </div>
     );
 };

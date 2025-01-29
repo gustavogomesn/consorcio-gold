@@ -20,6 +20,13 @@ export default function Members() {
 		return json
 	}
 
+	if (members.length == 0) {
+		return <div className='d-flex justify-content-center align-items-center flex-column mt-5'>
+			<h3>Para iniciar um grupo, cadastre os membros no link abaixo</h3>
+			<a href='/novos-membros' className='btn btn-success'>Cadastrar membros</a>
+		</div>
+	}else{
+
 	return <>
 		<Menu />
 		<main>
@@ -49,4 +56,5 @@ export default function Members() {
 		</main>
 		<AddButton/>
 	</>
+	}
 }
