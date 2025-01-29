@@ -72,6 +72,7 @@ def end_meeting(request, meeting_id):
     
     # MAKING FEE PAYMENTS
     fees_to_pay = Loans.objects.filter(isActive=True).filter(~Q(meeting_id=meeting_id)).values()
+    print('## FEE COLECTED', fees_to_pay)
     meeting_entries_fees = [
         MeetingEntries(**{
             'type': 'fee',
@@ -83,9 +84,10 @@ def end_meeting(request, meeting_id):
     for entry in fees_to_pay
     ]
     MeetingEntries.objects.bulk_create(meeting_entries_fees)
-    
+    print('## FEE PAID')
     # MAKING FINE PAYMENTS
     fines_to_pay = Fine.objects.filter(paid=False).filter(~Q(meeting_id=meeting_id)).values()
+    print('## FINES COLECTED', fines_to_pay)
     meeting_entries_fines = []
     for entry in fines_to_pay:
         # Populating entries
@@ -103,21 +105,23 @@ def end_meeting(request, meeting_id):
         fine.paid = True
         fine.save()
     MeetingEntries.objects.bulk_create(meeting_entries_fines)
-    
-    # MAKING CONTIBUITIONS
-    temporary_entries = TemporaryEntries.objects.filter(meeting_id=meeting_id).values()
+    print('## FINES PAID')
+    # MAKING CONTIBUITIONS(im setting columns in values() to avoid pass id)
+    temporary_entries = TemporaryEntries.objects.filter(meeting_id=meeting_id).values('type', 'value', 'meeting_id', 'member_id', 'loan_id')
     meeting_entries = []
     for entry in temporary_entries:
         meeting_entries.append(MeetingEntries(**entry))
+        print(MeetingEntries(**entry))
         if entry['type'] == 'stocks':
             member = Members.objects.get(id=entry['member_id'])
             member.stocks += entry['value']
             member.save()
     MeetingEntries.objects.bulk_create(meeting_entries)
     TemporaryEntries.objects.all().delete()
-    
+    print('## STOCKS PAID')
     # REGISTERING FUND MOVIMENTION
     fm = FundMovement.objects.filter(meeting_id=meeting_id).values()
+    print('## FUND COLECTED', fm)
     fm_entries = [
         MeetingEntries(**{
             'type': 'fund_withdraw' if entry['type'] == '' else 'fund_contrib',
@@ -127,8 +131,10 @@ def end_meeting(request, meeting_id):
         })
     for entry in fm
     ]
+    for e in fm_entries:
+        print(e)
     MeetingEntries.objects.bulk_create(fm_entries)
-    
+    print('## FUND PAID')
     # UPDATING NUMBERS OF MEETING AND ENDING IT
     sum_of_stocks = MeetingEntries.objects.filter(type='stocks', meeting_id=meeting_id).aggregate(Sum('value'))['value__sum']
     sum_of_loan_made = Loans.objects.filter(meeting_id=meeting_id).aggregate(Sum('value'))['value__sum']
