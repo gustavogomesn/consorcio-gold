@@ -12,7 +12,7 @@ class GenerateMeetingMinute():
                 stocks_table += f'''
                 <tr>
                     <td>{entrie['member__name']}</td>
-                    <td>{"R$ {:,.2f}".format(entrie['value'])}</td>
+                    <td>{entrie['value']}</td>
                 </tr>
                 '''
             elif entrie['type'] == 'fee':
@@ -49,8 +49,8 @@ class GenerateMeetingMinute():
         for fm in fund_movements:
             fund_movement_table += f'''
             <tr>
-                <td>{"Contribuição" if fm["type"] == "" else "Resgate"}</td>
-                <td>{fm["reason"]}</td>
+                <td>{"Resgate" if fm["type"] == "" else "Contribuição"}</td>
+                <td>{fm["reason"] or ""}</td>
                 <td>{"R$ {:,.2f}".format(fm["value"])}</td>
             </tr>
             '''
@@ -165,19 +165,20 @@ class GenerateMeetingMinute():
             </div>
             <h2>ENTRADAS</h2>
             <ul>
-                <li>AÇÕES: + R$5.600,00</li>
-                <li>JUROS: + R$600,00</li>
-                <li>MULTAS: + R$2,00</li>
-                <li>FUNDO: + R$125,00</li>
+                <li>AÇÕES: {"R$ {:,.2f}".format(summary['current_meeting_stocks'])}</li>
+                <li>JUROS: {"R$ {:,.2f}".format(summary['current_meeting_fees'])}</li>
+                <li>MULTAS: {"R$ {:,.2f}".format(summary['current_meeting_fines'])}</li>
+                <li>FUNDO: R$ 125,00</li>
             </ul>
             <h2>SAÍDAS</h2>
             <ul>
-                <li>EMPRÉSTIMOS: - R$1.200,00</li>
+                <li>EMPRÉSTIMOS: - {"R$ {:,.2f}".format(summary['current_meeting_loans_made'])}</li>
+                {f'<li>FUNDO: - {"R$ {:,.2f}".format(125 - summary["current_meeting_fees"])}</li>' if summary['current_meeting_fund'] != 125 else ""}
             </ul>
             <h2>SALDO</h2>
             <ul>
-                <li>CAIXA: R$7.000,00 - R$1.000,00 = <b>+ R$6.000,00</b></li>
-                <li>FUNDO: + R$125,00</li>
+                <li>CAIXA: {"R$ {:,.2f}".format(summary['current_meeting_inflow'])} - {"R$ {:,.2f}".format(summary['current_meeting_loans_made'])} = <b>{"R$ {:,.2f}".format(summary['current_meeting_new_cash_flow'])}</b></li>
+                <li>FUNDO: R$125,00</li>
             </ul>
             <hr>
             <div class="card-container">

@@ -72,7 +72,6 @@ def end_meeting(request, meeting_id):
     
     # MAKING FEE PAYMENTS
     fees_to_pay = Loans.objects.filter(isActive=True).filter(~Q(meeting_id=meeting_id)).values()
-    print('## FEE COLECTED', fees_to_pay)
     meeting_entries_fees = [
         MeetingEntries(**{
             'type': 'fee',
@@ -84,10 +83,9 @@ def end_meeting(request, meeting_id):
     for entry in fees_to_pay
     ]
     MeetingEntries.objects.bulk_create(meeting_entries_fees)
-    print('## FEE PAID')
+
     # MAKING FINE PAYMENTS
     fines_to_pay = Fine.objects.filter(paid=False).filter(~Q(meeting_id=meeting_id)).values()
-    print('## FINES COLECTED', fines_to_pay)
     meeting_entries_fines = []
     for entry in fines_to_pay:
         # Populating entries
@@ -105,23 +103,21 @@ def end_meeting(request, meeting_id):
         fine.paid = True
         fine.save()
     MeetingEntries.objects.bulk_create(meeting_entries_fines)
-    print('## FINES PAID')
+    
     # MAKING CONTIBUITIONS(im setting columns in values() to avoid pass id)
     temporary_entries = TemporaryEntries.objects.filter(meeting_id=meeting_id).values('type', 'value', 'meeting_id', 'member_id', 'loan_id')
     meeting_entries = []
     for entry in temporary_entries:
         meeting_entries.append(MeetingEntries(**entry))
-        print(MeetingEntries(**entry))
         if entry['type'] == 'stocks':
             member = Members.objects.get(id=entry['member_id'])
             member.stocks += entry['value']
             member.save()
     MeetingEntries.objects.bulk_create(meeting_entries)
     TemporaryEntries.objects.all().delete()
-    print('## STOCKS PAID')
+    
     # REGISTERING FUND MOVIMENTION
     fm = FundMovement.objects.filter(meeting_id=meeting_id).values()
-    print('## FUND COLECTED', fm)
     fm_entries = [
         MeetingEntries(**{
             'type': 'fund_withdraw' if entry['type'] == '' else 'fund_contrib',
@@ -131,10 +127,7 @@ def end_meeting(request, meeting_id):
         })
     for entry in fm
     ]
-    for e in fm_entries:
-        print(e)
     MeetingEntries.objects.bulk_create(fm_entries)
-    print('## FUND PAID')
     # UPDATING NUMBERS OF MEETING AND ENDING IT
     sum_of_stocks = MeetingEntries.objects.filter(type='stocks', meeting_id=meeting_id).aggregate(Sum('value'))['value__sum']
     sum_of_loan_made = Loans.objects.filter(meeting_id=meeting_id).aggregate(Sum('value'))['value__sum']
@@ -351,13 +344,13 @@ def minute_download(request, meeting_id):
 
 def get_summary(request, meeting_id=False):
     if not meeting_id:
-        stocks = Meetings.objects.filter(finished = True).aggregate(Sum('stocks'))['stocks__sum']
-        stocks_amount = Meetings.objects.filter(finished = True).aggregate(Sum('stocks'))['stocks__sum'] * STOCK_VALUE 
-        fees = Meetings.objects.filter(finished = True).aggregate(Sum('fees'))['fees__sum']
-        fines = Meetings.objects.filter(finished = True).aggregate(Sum('fines'))['fines__sum']
-        loaned = Loans.objects.filter(isActive = True).aggregate(Sum('remaining_value'))['remaining_value__sum']
-        cash = stocks_amount + fees + fines - loaned
-        fund = Meetings.objects.filter(finished = True).aggregate(Sum('fund'))['fund__sum']
+        stocks = Meetings.objects.filter(finished = True).aggregate(Sum('stocks'))['stocks__sum'] or 0
+        stocks_amount = Meetings.objects.filter(finished = True).aggregate(Sum('stocks'))['stocks__sum'] * STOCK_VALUE
+        fees = Meetings.objects.filter(finished = True).aggregate(Sum('fees'))['fees__sum'] or 0
+        fines = Meetings.objects.filter(finished = True).aggregate(Sum('fines'))['fines__sum'] or 0
+        loaned = Loans.objects.filter(isActive = True).aggregate(Sum('remaining_value'))['remaining_value__sum'] or 0
+        cash = stocks_amount + fees + fines - loaned or 0
+        fund = Meetings.objects.filter(finished = True).aggregate(Sum('fund'))['fund__sum'] or 0
         current_stock_value = (cash + loaned) / stocks
         return JsonResponse({
             'stocks': stocks,
@@ -375,29 +368,44 @@ def get_summary(request, meeting_id=False):
         cash = stocks_amount + fees + fines - loaned
         current_stock_value = (cash + loaned) / stocks
         fund = Meetings.objects.filter(finished = True, id__lte = meeting_id).aggregate(Sum('fund'))['fund__sum']
+        
+        current_meeting = Meetings.objects.get(id=meeting_id)
+        inflow = (current_meeting.stocks*STOCK_VALUE) + current_meeting.fees + current_meeting.fines + current_meeting.loans_paid
         return JsonResponse({
             'stocks': stocks,
             'cash': cash,
             'loaned': loaned,
             'stock_value': current_stock_value,
-            'fund': fund
+            'fund': fund,
         })
 
 def get_summary_data(meeting_id):
-    stocks = Meetings.objects.filter(finished = True, id__lte = meeting_id).aggregate(Sum('stocks'))['stocks__sum']
+    stocks = Meetings.objects.filter(finished = True, id__lte = meeting_id).aggregate(Sum('stocks'))['stocks__sum'] or 0
     stocks_amount = Meetings.objects.filter(finished = True, id__lte = meeting_id).aggregate(Sum('stocks'))['stocks__sum'] * STOCK_VALUE
-    fees = Meetings.objects.filter(finished = True, id__lte = meeting_id).aggregate(Sum('fees'))['fees__sum']
-    fines = Meetings.objects.filter(finished = True, id__lte = meeting_id).aggregate(Sum('fines'))['fines__sum']
-    loaned = Meetings.objects.filter(finished = True, id__lte = meeting_id).aggregate(Sum('loans_made'))['loans_made__sum'] - Meetings.objects.filter(finished = True, id__lte = meeting_id).aggregate(Sum('loans_paid'))['loans_paid__sum']
+    fees = Meetings.objects.filter(finished = True, id__lte = meeting_id).aggregate(Sum('fees'))['fees__sum'] or 0
+    fines = Meetings.objects.filter(finished = True, id__lte = meeting_id).aggregate(Sum('fines'))['fines__sum'] or 0
+    loaned = Meetings.objects.filter(finished = True, id__lte = meeting_id).aggregate(Sum('loans_made'))['loans_made__sum'] or 0 - Meetings.objects.filter(finished = True, id__lte = meeting_id).aggregate(Sum('loans_paid'))['loans_paid__sum'] or 0
     cash = stocks_amount + fees + fines - loaned
     current_stock_value = (cash + loaned) / stocks
-    fund = Meetings.objects.filter(finished = True, id__lte = meeting_id).aggregate(Sum('fund'))['fund__sum']
+    fund = Meetings.objects.filter(finished = True, id__lte = meeting_id).aggregate(Sum('fund'))['fund__sum'] or 0
+    
+    current_meeting = Meetings.objects.get(id=meeting_id)
+    current_meeting_inflow = (current_meeting.stocks*STOCK_VALUE) + current_meeting.fees + current_meeting.fines + current_meeting.loans_paid
+    current_meeting_new_cash_flow = current_meeting_inflow - current_meeting.loans_made
     return ({
         'stocks': stocks,
         'cash': cash,
         'loaned': loaned,
         'stock_value': current_stock_value,
-        'fund': fund
+        'fund': fund,
+        'current_meeting_stocks': current_meeting.stocks * STOCK_VALUE,
+        'current_meeting_fees': current_meeting.fees,
+        'current_meeting_fines': current_meeting.fines,
+        'current_meeting_fund': current_meeting.fund,
+        'current_meeting_loans_made': current_meeting.loans_made,
+        'current_meeting_loans_paid': current_meeting.loans_paid,
+        'current_meeting_inflow': current_meeting_inflow,
+        'current_meeting_new_cash_flow': current_meeting_new_cash_flow,
     })
 
 # THIS ISNT A ROUTE, IS ONLY TO BE CONSUMED BY show_meeting ROUTE
