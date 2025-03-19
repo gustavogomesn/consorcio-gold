@@ -25,7 +25,6 @@ const NewMembers = () => {
                 body: formData,
             });
 
-            console.log(response)
             const data = await response.json();
             if (response.ok) {
                 setMessage("File uploaded successfully!");

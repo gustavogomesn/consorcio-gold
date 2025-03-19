@@ -9,13 +9,18 @@ from .forms import UploadFileForm
 from .utils import GenerateMeetingMinute
 import openpyxl
 import json
+import yaml
 import io
-import requests
 
 LOAN_FEE = 3/100
 MULT_ALLOWED_LOAN = 3
 STOCK_VALUE = 50
 FUND_VALUE = 5
+
+with open('website/settings.yaml') as y:
+    config = yaml.safe_load(y)
+    
+MEMBERS = config['MEMBERS']
 
 def index(request):
     print('Server running')
@@ -33,10 +38,11 @@ def new_meeting(request):
         meeting.save()
         
         # EVERY MEETING, THE FUND CONTRIBUTION IS REQUIRED TO ALL MEMBERS(member_id: 1 is only convencioned)
+        print(MEMBERS)
         fundContrib = FundMovement(**{
             'meeting': meeting,
             'member_id': 1,
-            'value': 25*FUND_VALUE,
+            'value': MEMBERS*FUND_VALUE,
             'type': 'contribuition'
         })
         fundContrib.save()
@@ -183,6 +189,14 @@ def handle_upload_members(file):
         sheet = wkb.active
         columns = sheet.max_column
         rows = sheet.max_row
+        global MEMBERS
+        MEMBERS = rows - 1
+        
+        with open('website/settings.yaml') as y:
+            config = yaml.safe_load(y)
+        with open('website/settings.yaml', 'w') as y:
+            config['MEMBERS'] = rows-1
+            yaml.safe_dump(config, y, default_flow_style=False)
         
         for r in range(1, rows):
             keys = ['number', 'name', 'role', 'contact', 'stocks']

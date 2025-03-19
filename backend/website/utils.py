@@ -168,17 +168,17 @@ class GenerateMeetingMinute():
                 <li>AÇÕES: {"R$ {:,.2f}".format(summary['current_meeting_stocks'])}</li>
                 <li>JUROS: {"R$ {:,.2f}".format(summary['current_meeting_fees'])}</li>
                 <li>MULTAS: {"R$ {:,.2f}".format(summary['current_meeting_fines'])}</li>
-                <li>FUNDO: R$ 125,00</li>
+                <li>FUNDO: R$ 135,00</li>
             </ul>
             <h2>SAÍDAS</h2>
             <ul>
                 <li>EMPRÉSTIMOS: - {"R$ {:,.2f}".format(summary['current_meeting_loans_made'])}</li>
-                {f'<li>FUNDO: - {"R$ {:,.2f}".format(125 - summary["current_meeting_fees"])}</li>' if summary['current_meeting_fund'] != 125 else ""}
+                {f'<li>FUNDO: - {"R$ {:,.2f}".format(135 - summary["current_meeting_fees"])}</li>' if summary['current_meeting_fund'] != 135 else ""}
             </ul>
             <h2>SALDO</h2>
             <ul>
                 <li>CAIXA: {"R$ {:,.2f}".format(summary['current_meeting_inflow'])} - {"R$ {:,.2f}".format(summary['current_meeting_loans_made'])} = <b>{"R$ {:,.2f}".format(summary['current_meeting_new_cash_flow'])}</b></li>
-                <li>FUNDO: R$125,00</li>
+                <li>FUNDO: R$135,00</li>
             </ul>
             <hr>
             <div class="card-container">
