@@ -34,7 +34,7 @@ export default function SelectedMeeting() {
     }, [])
 
     async function getData() {
-        const endpoint = `http://${import.meta.env.VITE_ENDPOINT}:8000/show-meeting/${meetingId}`
+        const endpoint = `http://${import.meta.env.VITE_ENDPOINT}/show-meeting/${meetingId}`
         const response = await fetch(endpoint)
         const json = await response.json()
         return json
@@ -44,7 +44,7 @@ export default function SelectedMeeting() {
         if (!confirm("Após encerrar uma reunião não poderá alterar seus dados, tem certeza?")){
             return
         }
-        const endpoint = `http://${import.meta.env.VITE_ENDPOINT}:8000/end-meeting/${meetingId}`
+        const endpoint = `http://${import.meta.env.VITE_ENDPOINT}/end-meeting/${meetingId}`
         const response = await fetch(endpoint)
         const json = await response.json()
         

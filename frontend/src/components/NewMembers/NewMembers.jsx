@@ -20,7 +20,7 @@ const NewMembers = () => {
         formData.append("file", file);
 
         try {
-            const response = await fetch(`http://${import.meta.env.VITE_ENDPOINT}:8000/upload-members/`, {
+            const response = await fetch(`http://${import.meta.env.VITE_ENDPOINT}/upload-members/`, {
                 method: "POST",
                 body: formData,
             });
@@ -42,7 +42,7 @@ const NewMembers = () => {
         <div className="d-flex align-items-center justify-content-center flex-column mt-5 gap-4">
             <h2>Cadastrar Usuários</h2>
             <p style={{width: '400px'}}>Faça download do modelo abaixo, preencha com todos os membros participantes, não deixando nenhuma columa em branco e envie o arquivo preenchido no formulário abaixo</p>
-            <a href={`http://${import.meta.env.VITE_ENDPOINT}:8000/members-model-download`} className='text-warning'>Download</a>
+            <a href={`http://${import.meta.env.VITE_ENDPOINT}/members-model-download`} className='text-warning'>Download</a>
             <form onSubmit={handleSubmit} className="mt-3">
                 <div className="form-group">
                     <input type="file" onChange={handleFileChange} className="form-control" />

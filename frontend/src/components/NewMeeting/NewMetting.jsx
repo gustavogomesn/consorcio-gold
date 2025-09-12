@@ -21,7 +21,7 @@ function NewMeeting() {
         const formData = new FormData(e.target.form)
         
         try {
-            const response = await fetch(`http://${import.meta.env.VITE_ENDPOINT}:8000/new-meeting/`, {
+            const response = await fetch(`http://${import.meta.env.VITE_ENDPOINT}/new-meeting/`, {
                 method: "POST",
                 body: formData,
             });

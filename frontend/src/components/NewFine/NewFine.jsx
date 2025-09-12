@@ -22,14 +22,14 @@ function NewFine() {
 	}, [])
 
 	async function getMembers() {
-		const endpoint = `http://${import.meta.env.VITE_ENDPOINT}:8000//get-members/`
+		const endpoint = `http://${import.meta.env.VITE_ENDPOINT}//get-members/`
 		const response = await fetch(endpoint)
 		const json = await response.json()
 		return json
 	}
 
 	async function getMeetings() {
-		const endpoint = `http://${import.meta.env.VITE_ENDPOINT}:8000//get-meetings/`
+		const endpoint = `http://${import.meta.env.VITE_ENDPOINT}//get-meetings/`
 		const response = await fetch(endpoint)
 		const json = await response.json()
 		return json
@@ -49,7 +49,7 @@ function NewFine() {
         const formData = new FormData(e.target.form)
         
         try {
-            const response = await fetch(`http://${import.meta.env.VITE_ENDPOINT}:8000/new-fine/`, {
+            const response = await fetch(`http://${import.meta.env.VITE_ENDPOINT}/new-fine/`, {
                 method: "POST",
                 body: formData,
             });

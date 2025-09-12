@@ -33,7 +33,7 @@ export default function Charts() {
         }, [])
     
         async function getData() {
-            const endpoint = `http://${import.meta.env.VITE_ENDPOINT}:8000/get-summary`
+            const endpoint = `http://${import.meta.env.VITE_ENDPOINT}/get-summary`
             const response = await fetch(endpoint)
             const json = await response.json()
             return json

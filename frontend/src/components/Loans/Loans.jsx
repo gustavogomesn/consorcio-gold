@@ -15,7 +15,7 @@ export default function Loans() {
 	}, [])
 
 	async function getData() {
-		const endpoint = `http://${import.meta.env.VITE_ENDPOINT}:8000/get-loans/`
+		const endpoint = `http://${import.meta.env.VITE_ENDPOINT}/get-loans/`
 		const response = await fetch(endpoint)
 		const json = await response.json()
 		return json
