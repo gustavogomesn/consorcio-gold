@@ -8,12 +8,12 @@ export default function Menu() {
 		</a>
 		<ul className='nav flex-column mb-auto'>
 			<li className='nav-item hover-purple rounded'>
-				<a href="/reunioes" className="nav-link" aria-current="page">
+				<a href="reunioes" className="nav-link" aria-current="page">
 					Reuniões
 				</a>
 			</li>
 			<li className='nav-item hover-purple rounded'>
-				<a href="/emprestimos" className="nav-link" aria-current="page">
+				<a href="emprestimos" className="nav-link" aria-current="page">
 					Empréstimos
 				</a>
 			</li>
@@ -23,7 +23,7 @@ export default function Menu() {
 				</a>
 			</li>
 			<li className='nav-item hover-purple rounded'>
-				<a href="/membros" className="nav-link" aria-current="page">
+				<a href="membros" className="nav-link" aria-current="page">
 					Membros
 				</a>
 			</li>

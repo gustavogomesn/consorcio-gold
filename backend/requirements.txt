@@ -8,8 +8,10 @@ Django==5.1.4
 django-cors-headers==4.6.0
 et_xmlfile==2.0.0
 fonttools==4.55.5
+gunicorn==23.0.0
 idna==3.10
 openpyxl==3.1.5
+packaging==25.0
 pillow==11.1.0
 psycopg2-binary==2.9.10
 pycparser==2.22

@@ -31,9 +31,23 @@ services:
       dockerfile: Dockerfile
     env_file:
       - frontend/.env
-    ports:
-      - 5173:5173
-    stdin_open: true
-    tty: true
+    volumes:
+      - build-html:/app/dist
+#    ports:
+#      - 5173:5173
+#    stdin_open: true
+#    tty: true
     depends_on:
       - backend
+  nginx:
+    build:
+      context: nginx
+      dockerfile: Dockerfile
+    ports:
+      - 5500:5500
+    volumes:
+      - build-html:/usr/share/nginx/html
+    depends_on:
+      - frontend
+volumes:
+  build-html:

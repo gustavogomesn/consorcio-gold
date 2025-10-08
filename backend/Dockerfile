@@ -12,4 +12,4 @@ COPY . .
 
 EXPOSE 4000
 
-CMD [ "sh", "-c", "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:4000" ]
+CMD [ "sh", "-c", "python manage.py makemigrations && python manage.py migrate && gunicorn --bind 0.0.0.0:4000 gold.wsgi" ]
